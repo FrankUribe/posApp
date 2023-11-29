@@ -1,5 +1,5 @@
 DELIMITER //
-
+DROP PROCEDURE IF EXISTS USUARIOS_CRUD;
 CREATE PROCEDURE USUARIOS_CRUD(
     IN p_Method CHAR(1),
     IN p_IDUSUARIO VARCHAR(20),
@@ -11,14 +11,16 @@ CREATE PROCEDURE USUARIOS_CRUD(
 )
 BEGIN
     IF p_Method = 'C' THEN
-        -- Método CREATE
-        INSERT INTO usuarios (CONTRA, NOMBRES, APELLIDOS, IDESTADO, FOTO)
-        VALUES (p_CONTRA, p_NOMBRES, p_APELLIDOS, p_IDESTADO, p_FOTO);
+		IF EXISTS(SELECT * FROM usuarios WHERE IDUSUARIO = p_IDUSUARIO) THEN
+			SELECT 0 AS RETORNO, 'Ya existe un usario con el mismo ID' AS MSG;
+        ELSE
+			INSERT INTO usuarios (IDUSUARIO, CONTRA, NOMBRES, APELLIDOS, IDESTADO, FOTO)
+			VALUES (p_IDUSUARIO, p_CONTRA, p_NOMBRES, p_APELLIDOS, p_IDESTADO, p_FOTO);
+			SELECT 1 AS RETORNO, 'Se registró el usuario' AS MSG;
+        END IF;
     ELSEIF p_Method = 'R' THEN
-        -- Método READ
         SELECT * FROM usuarios;
     ELSEIF p_Method = 'U' THEN
-        -- Método UPDATE
         UPDATE usuarios
         SET
             CONTRA = COALESCE(p_CONTRA, CONTRA),
@@ -27,14 +29,13 @@ BEGIN
             IDESTADO = COALESCE(p_IDESTADO, IDESTADO),
             FOTO = COALESCE(p_FOTO, FOTO)
         WHERE IDUSUARIO = p_IDUSUARIO;
+		SELECT 1 AS RETORNO, 'Se actualizó el usuario' AS MSG;
     ELSEIF p_Method = 'D' THEN
-        -- Método DELETE
         DELETE FROM usuarios WHERE IDUSUARIO = p_IDUSUARIO;
+		SELECT 1 AS RETORNO, 'Se elimino al usuario' AS MSG;
     ELSE
-        -- Manejo de errores si se proporciona un método no válido
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Invalid method provided';
-    END IF;
+		SELECT 0 AS RETORNO, 'No ha proporcionado un método valido' AS MSG;
+	END IF;
 END //
 
 DELIMITER ;
